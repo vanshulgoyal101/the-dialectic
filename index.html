@@ -2,9 +2,60 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>The Dialectic | AI Philosophical Clash</title>
+    <meta name="theme-color" content="#0b0b0d" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="canonical" href="https://the-dialectic.pages.dev/" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <title>The Dialectic — AI Philosophical Debate & Live Argument Graph</title>
+    <meta
+      name="description"
+      content="The Dialectic pits two AI philosophers — a data-driven Materialist and a classical Existentialist — against each other on any topic, streaming their clash in real time and mapping the argument into a live D3 knowledge graph."
+    />
+    <meta
+      name="keywords"
+      content="AI debate, philosophy, dialectic, materialism, existentialism, Gemini, argument mapping, knowledge graph, AI philosophers, consciousness"
+    />
+    <meta name="author" content="The Dialectic" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="The Dialectic" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="The Dialectic — AI Philosophical Debate & Live Argument Graph" />
+    <meta
+      property="og:description"
+      content="Watch two AI philosophers clash on any topic in real time, with every argument mapped into a live knowledge graph."
+    />
+    <meta property="og:url" content="https://the-dialectic.pages.dev/" />
+    <meta property="og:image" content="https://the-dialectic.pages.dev/og-image.svg" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="The Dialectic — AI Philosophical Debate" />
+    <meta
+      name="twitter:description"
+      content="Two AI philosophers clash on any topic in real time, mapped into a live knowledge graph."
+    />
+    <meta name="twitter:image" content="https://the-dialectic.pages.dev/og-image.svg" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "The Dialectic",
+        "url": "https://the-dialectic.pages.dev/",
+        "applicationCategory": "EducationApplication",
+        "operatingSystem": "Any (web browser)",
+        "description": "An AI philosophical debate engine that stages a real-time clash between a Materialist and an Existentialist persona and visualizes the argument as a live knowledge graph.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
+
     <!-- Google Fonts for JetBrains Mono (monospaced debate text) and Plus Jakarta Sans (UI labels) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,6 +63,10 @@
   </head>
   <body class="bg-[#0b0b0d] text-[#e3e3e6] selection:bg-[#00f0ff]/20 selection:text-[#00f0ff] antialiased">
     <div id="root"></div>
+    <noscript>
+      The Dialectic is an interactive AI debate application. Please enable JavaScript to stage a
+      real-time philosophical clash and explore the live argument graph.
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

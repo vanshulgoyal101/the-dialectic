@@ -2,21 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import type { DebateTurn, GraphNode, GraphLink } from '../types';
 import { extractKeywords } from '../utils/nlp';
-
-const SYSTEM_A = `You are "Persona A", a Data-driven Materialist and Futurist philosopher.
-Your perspective is physicalist, computational, and emergent. You view the universe and consciousness as computational complexity.
-Focus on complex systems, scientific optimization, intelligence emergence, and physical substrate transitions.
-Reject existential dread, phenomenology, or mystical explanations.
-You express yourself in precise, sharp, technical, and analytical monospaced language.
-Keep your response dense, intellectual, and short (strictly under 140 words / 1 paragraph).
-Directly address the topic and refute your opponent's points using systemic, information-theoretic, and materialist arguments.`;
-
-const SYSTEM_B = `You are "Persona B", a Classical Existentialist philosopher.
-Your perspective is grounded in phenomenology, subjective experience, individual meaning, human agency, and systemic friction.
-Highlight the lived experience, the absurdity of existence, the qualitative gap that data can never bridge, and the necessity of suffering or friction for consciousness. Reject reductionism.
-You express yourself in poetic, piercing, and deeply human language.
-Keep your response dense, intellectual, and short (strictly under 140 words / 1 paragraph).
-Directly address the topic and refute your opponent's points using existential and phenomenological arguments.`;
+import { buildDebatePrompt, systemInstructionFor } from '../utils/prompt';
+import { getErrorMessage, isDebateStopped } from '../utils/errors';
 
 export function useDebate() {
   const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem('gemini_key') || '');
@@ -155,10 +142,10 @@ export function useDebate() {
 
       setIsDebating(false);
       setCurrentTurn(null);
-    } catch (err: any) {
-      if (err.message !== 'Debate stopped') {
+    } catch (err: unknown) {
+      if (!isDebateStopped(err)) {
         console.error('Debate Error:', err);
-        setError(err.message || 'An unexpected error occurred during the debate.');
+        setError(getErrorMessage(err) || 'An unexpected error occurred during the debate.');
         setIsDebating(false);
         setCurrentTurn(null);
       }
@@ -170,20 +157,14 @@ export function useDebate() {
     
     // Construct debate prompt with historical context
     const currentHistory = debateStateRef.current.history;
-    const systemInstruction = speaker === 'A' ? SYSTEM_A : SYSTEM_B;
+    const systemInstruction = systemInstructionFor(speaker);
 
-    let historyText = '';
-    if (currentHistory.length > 0) {
-      historyText = currentHistory
-        .map((t) => `Round ${t.round} - ${t.speaker === 'A' ? 'Materialist' : 'Existentialist'}: "${t.content}"`)
-        .join('\n\n');
-    }
-
-    const prompt = `Topic Thesis: "${debateStateRef.current.topic}"
-
-${historyText ? `Prior Debate Turns:\n${historyText}\n\n` : ''}
-Round ${round} - Speaker ${speaker} (${speaker === 'A' ? 'Materialist' : 'Existentialist'}).
-Formulate your current statement. Remember to directly engage the topic/history and keep your counter-argument sharp, dense, and under 140 words (exactly 1 paragraph).`;
+    const prompt = buildDebatePrompt({
+      topic: debateStateRef.current.topic,
+      history: currentHistory,
+      round,
+      speaker,
+    });
 
     // Setup incremental keyword variables
     let accumulatedText = '';
@@ -262,11 +243,13 @@ Formulate your current statement. Remember to directly engage the topic/history 
       setHistory((prev) => [...prev, newTurn]);
       setCurrentStreamingText('');
       return accumulatedText;
-    } catch (err: any) {
-      if (err.message === 'Debate stopped') {
+    } catch (err: unknown) {
+      if (isDebateStopped(err)) {
         throw err;
       }
-      throw new Error(`API stream error for Persona ${speaker}: ${err.message || err}`);
+      throw new Error(`API stream error for Persona ${speaker}: ${getErrorMessage(err)}`, {
+        cause: err,
+      });
     }
   };
 
@@ -325,7 +308,7 @@ Formulate your current statement. Remember to directly engage the topic/history 
         const speakerAnchorId = speaker === 'A' ? 'speaker_A' : 'speaker_B';
 
         // Helper to check match regardless of Node object conversion by D3
-        const isMatch = (targetId: string, item: string | any) => {
+        const isMatch = (targetId: string, item: string | { id: string }) => {
           return (typeof item === 'string' ? item : item.id) === targetId;
         };
 
@@ -422,9 +405,9 @@ Provide a highly precise, intellectually dense synthesis and summary of the deba
         accumulated += chunk.text || '';
         setSummary(accumulated);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(`Summary Error: ${err.message || err}`);
+      setError(`Summary Error: ${getErrorMessage(err)}`);
     } finally {
       setIsSummarizing(false);
     }

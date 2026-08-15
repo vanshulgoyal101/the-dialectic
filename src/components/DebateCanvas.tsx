@@ -16,12 +16,38 @@ export default function DebateCanvas({ nodes, links, topic }: DebateCanvasProps)
   const [dimensions, setDimensions] = useState({ width: 800, height: 450 });
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
 
+  // Node styling resolvers (declared before the rendering effect that uses them).
+  function getNodeRadius(node: GraphNode): number {
+    if (node.group === 'thesis') return 16;
+    if (node.group === 'speaker_A' || node.group === 'speaker_B') return 12;
+    // Scale radius by usage frequency
+    return Math.min(4 + node.count * 1.5, 20);
+  }
+
+  function getNodeColor(node: GraphNode): string {
+    if (node.group === 'thesis') return 'rgba(255, 255, 255, 0.9)';
+    if (node.group === 'speaker_A') return 'rgba(0, 240, 255, 0.1)';
+    if (node.group === 'speaker_B') return 'rgba(255, 140, 0, 0.1)';
+    if (node.group === 'A') return '#00f0ff';
+    if (node.group === 'B') return '#ff8c00';
+    if (node.group === 'neutral') return '#bd00ff';
+    return '#a1a1aa';
+  }
+
+  function getNodeStrokeColor(node: GraphNode): string {
+    if (node.group === 'thesis') return '#ffffff';
+    if (node.group === 'speaker_A' || node.group === 'A') return '#00f0ff';
+    if (node.group === 'speaker_B' || node.group === 'B') return '#ff8c00';
+    if (node.group === 'neutral') return '#bd00ff';
+    return '#71717a';
+  }
+
   // Resize handler
   useEffect(() => {
     if (!containerRef.current) return;
     
     const resizeObserver = new ResizeObserver((entries) => {
-      for (let entry of entries) {
+      for (const entry of entries) {
         const { width, height } = entry.contentRect;
         setDimensions({
           width: width || 800,
@@ -96,6 +122,8 @@ export default function DebateCanvas({ nodes, links, topic }: DebateCanvasProps)
     return () => {
       simulation.stop();
     };
+    // Initialize the simulation once; live dimensions are read on each tick/redraw.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update simulation center force when dimensions change
@@ -156,8 +184,8 @@ export default function DebateCanvas({ nodes, links, topic }: DebateCanvasProps)
 
     // Merge Links to resolve to the mutated Node objects
     const mergedLinks = links.map(l => {
-      const sourceId = typeof l.source === 'string' ? l.source : (l.source as any).id;
-      const targetId = typeof l.target === 'string' ? l.target : (l.target as any).id;
+      const sourceId = typeof l.source === 'string' ? l.source : (l.source as GraphNode).id;
+      const targetId = typeof l.target === 'string' ? l.target : (l.target as GraphNode).id;
       
       const sourceNode = mergedNodes.find(mn => mn.id === sourceId) || sourceId;
       const targetNode = mergedNodes.find(mn => mn.id === targetId) || targetId;
@@ -183,7 +211,11 @@ export default function DebateCanvas({ nodes, links, topic }: DebateCanvasProps)
 
     // 1. Draw Links
     const linkSelection = linksGroup.selectAll<SVGLineElement, GraphLink>('line')
-      .data(mergedLinks, (d: any) => `${d.source.id || d.source}-${d.target.id || d.target}`);
+      .data(mergedLinks, (d: GraphLink) => {
+        const s = typeof d.source === 'string' ? d.source : d.source.id;
+        const t = typeof d.target === 'string' ? d.target : d.target.id;
+        return `${s}-${t}`;
+      });
 
     linkSelection.exit().remove();
 
@@ -191,8 +223,8 @@ export default function DebateCanvas({ nodes, links, topic }: DebateCanvasProps)
       .attr('stroke-width', d => Math.max(1, d.value))
       .attr('opacity', 0.2)
       .attr('stroke', d => {
-        const srcGroup = (d.source as any).group;
-        const tgtGroup = (d.target as any).group;
+        const srcGroup = (d.source as GraphNode).group;
+        const tgtGroup = (d.target as GraphNode).group;
         if (srcGroup === 'speaker_A' || tgtGroup === 'speaker_A' || srcGroup === 'A' || tgtGroup === 'A') {
           return '#00f0ff';
         }
@@ -202,6 +234,8 @@ export default function DebateCanvas({ nodes, links, topic }: DebateCanvasProps)
         return 'rgba(255, 255, 255, 0.15)';
       });
 
+    // d3's enter/update selection generics do not unify cleanly on merge.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const linkMerge = linkEnter.merge(linkSelection as any);
 
     // 2. Draw Nodes
@@ -246,6 +280,8 @@ export default function DebateCanvas({ nodes, links, topic }: DebateCanvasProps)
       .attr('stroke-dasharray', '2, 2')
       .attr('opacity', 0.6);
 
+    // d3's enter/update selection generics do not unify cleanly on merge.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const nodeMerge = nodeEnter.merge(nodeSelection as any);
 
     // Update existing nodes sizes/colors
@@ -270,6 +306,8 @@ export default function DebateCanvas({ nodes, links, topic }: DebateCanvasProps)
       .attr('dy', '3px')
       .text(d => d.label);
 
+    // d3's enter/update selection generics do not unify cleanly on merge.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const labelMerge = labelEnter.merge(labelSelection as any);
     
     labelMerge.transition().duration(300)
@@ -292,10 +330,10 @@ export default function DebateCanvas({ nodes, links, topic }: DebateCanvasProps)
     // Update simulation ticking
     simulation.on('tick', () => {
       linkMerge
-        .attr('x1', d => (d.source as any).x)
-        .attr('y1', d => (d.source as any).y)
-        .attr('x2', d => (d.target as any).x)
-        .attr('y2', d => (d.target as any).y);
+        .attr('x1', d => (d.source as GraphNode).x ?? 0)
+        .attr('y1', d => (d.source as GraphNode).y ?? 0)
+        .attr('x2', d => (d.target as GraphNode).x ?? 0)
+        .attr('y2', d => (d.target as GraphNode).y ?? 0);
 
       nodeMerge
         .attr('transform', d => `translate(${d.x}, ${d.y})`);
@@ -309,7 +347,7 @@ export default function DebateCanvas({ nodes, links, topic }: DebateCanvasProps)
     simulation.alpha(0.3).restart();
 
     // Drag helper functions
-    function dragStarted(event: any, d: GraphNode) {
+    function dragStarted(event: d3.D3DragEvent<SVGGElement, GraphNode, GraphNode>, d: GraphNode) {
       const simulation = simulationRef.current;
       if (!simulation) return;
       if (!event.active) simulation.alphaTarget(0.1).restart();
@@ -317,12 +355,12 @@ export default function DebateCanvas({ nodes, links, topic }: DebateCanvasProps)
       d.fy = d.y;
     }
 
-    function dragged(event: any, d: GraphNode) {
+    function dragged(event: d3.D3DragEvent<SVGGElement, GraphNode, GraphNode>, d: GraphNode) {
       d.fx = event.x;
       d.fy = event.y;
     }
 
-    function dragEnded(event: any, d: GraphNode) {
+    function dragEnded(event: d3.D3DragEvent<SVGGElement, GraphNode, GraphNode>, d: GraphNode) {
       const simulation = simulationRef.current;
       if (!simulation) return;
       if (!event.active) simulation.alphaTarget(0);
@@ -332,6 +370,9 @@ export default function DebateCanvas({ nodes, links, topic }: DebateCanvasProps)
         d.fy = null;
       }
     }
+    // Re-run only on structural graph changes / hover; the effect reads the
+    // latest nodes/links/dimensions from closure and rebuilds the D3 layout.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes.length, links.length, hoveredNode]);
 
   // Zoom Helpers
@@ -340,6 +381,8 @@ export default function DebateCanvas({ nodes, links, topic }: DebateCanvasProps)
     if (!svg.node()) return;
     
     svg.transition().duration(250).call(
+      // d3's selection.call overload cannot infer the zoom behavior's argument type.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       d3.zoom<SVGSVGElement, unknown>().scaleBy as any,
       factor
     );
@@ -350,35 +393,11 @@ export default function DebateCanvas({ nodes, links, topic }: DebateCanvasProps)
     if (!svg.node()) return;
 
     svg.transition().duration(400).call(
+      // d3's selection.call overload cannot infer the zoom behavior's argument type.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       d3.zoom<SVGSVGElement, unknown>().transform as any,
       d3.zoomIdentity
     );
-  };
-
-  // Node Styling Resolvers
-  const getNodeRadius = (node: GraphNode): number => {
-    if (node.group === 'thesis') return 16;
-    if (node.group === 'speaker_A' || node.group === 'speaker_B') return 12;
-    // Scale radius by usage frequency
-    return Math.min(4 + node.count * 1.5, 20);
-  };
-
-  const getNodeColor = (node: GraphNode): string => {
-    if (node.group === 'thesis') return 'rgba(255, 255, 255, 0.9)';
-    if (node.group === 'speaker_A') return 'rgba(0, 240, 255, 0.1)';
-    if (node.group === 'speaker_B') return 'rgba(255, 140, 0, 0.1)';
-    if (node.group === 'A') return '#00f0ff';
-    if (node.group === 'B') return '#ff8c00';
-    if (node.group === 'neutral') return '#bd00ff';
-    return '#a1a1aa';
-  };
-
-  const getNodeStrokeColor = (node: GraphNode): string => {
-    if (node.group === 'thesis') return '#ffffff';
-    if (node.group === 'speaker_A' || node.group === 'A') return '#00f0ff';
-    if (node.group === 'speaker_B' || node.group === 'B') return '#ff8c00';
-    if (node.group === 'neutral') return '#bd00ff';
-    return '#71717a';
   };
 
   return (

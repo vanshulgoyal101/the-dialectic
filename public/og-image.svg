@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="The Dialectic — AI Philosophical Debate">
+  <rect width="1200" height="630" fill="#0b0b0d" />
+  <line x1="600" y1="90" x2="600" y2="540" stroke="#1e2430" stroke-width="2" />
+  <circle cx="300" cy="315" r="70" fill="none" stroke="#00f0ff" stroke-width="3" />
+  <text x="300" y="330" font-family="'JetBrains Mono', monospace" font-size="46" fill="#00f0ff" text-anchor="middle">A</text>
+  <circle cx="900" cy="315" r="70" fill="none" stroke="#ff5c7a" stroke-width="3" />
+  <text x="900" y="330" font-family="'JetBrains Mono', monospace" font-size="46" fill="#ff5c7a" text-anchor="middle">B</text>
+  <text x="600" y="150" font-family="'Plus Jakarta Sans', sans-serif" font-size="66" font-weight="800" fill="#e3e3e6" text-anchor="middle">The Dialectic</text>
+  <text x="600" y="470" font-family="'JetBrains Mono', monospace" font-size="28" fill="#9aa3b2" text-anchor="middle">AI Philosophical Debate · Live Argument Graph</text>
+  <text x="300" y="430" font-family="'JetBrains Mono', monospace" font-size="22" fill="#5b6472" text-anchor="middle">Materialist</text>
+  <text x="900" y="430" font-family="'JetBrains Mono', monospace" font-size="22" fill="#5b6472" text-anchor="middle">Existentialist</text>
+</svg>
